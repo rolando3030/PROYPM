@@ -6,12 +6,12 @@ class EntradasPage extends StatefulWidget {
     this.movieTitle = 'Superman',
     this.cinemaLine =
         'CP ALCAZAR, Sala 7  |  2D, REGULAR DOBLADA\n15:20  |  Hoy, Miércoles 8 de Octubre de 2025',
-    this.baseAmount = 0.0, // <<<<< NUEVO
+    this.baseAmount = 0.0,
   });
 
   final String movieTitle;
   final String cinemaLine;
-  final double baseAmount; // <<<<< NUEVO
+  final double baseAmount;
 
   @override
   State<EntradasPage> createState() => _EntradasPageState();
@@ -21,12 +21,12 @@ class _EntradasPageState extends State<EntradasPage>
     with SingleTickerProviderStateMixin {
   int tab = 0;
 
+  // Cantidad inicial por defecto = 0 (no especificamos initialQty)
   final List<_TicketType> promo = [
     _TicketType(
       title: '50% Promo Amex 2025',
       subtitle: 'Exclusivo con tu tarjeta American Express',
       price: 17.0,
-      initialQty: 4,
     ),
   ];
 
@@ -53,11 +53,7 @@ class _EntradasPageState extends State<EntradasPage>
     ),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    for (final t in promo) t.qty = t.initialQty;
-  }
+  // Ya no seteamos qty en initState; todas arrancan en 0.
 
   double get ticketsAmount {
     double s = 0;
@@ -66,7 +62,7 @@ class _EntradasPageState extends State<EntradasPage>
     return s;
   }
 
-  double get total => widget.baseAmount + ticketsAmount; // <<<<< NUEVO
+  double get total => widget.baseAmount + ticketsAmount;
 
   void _setTab(int i) => setState(() => tab = i);
 
@@ -232,7 +228,7 @@ class _EntradasPageState extends State<EntradasPage>
   }
 }
 
-/* ====== Widgets auxiliares (idénticos a la versión previa) ====== */
+/* ====== Widgets auxiliares ====== */
 
 class _HeaderIcon extends StatelessWidget {
   final IconData icon;
@@ -634,6 +630,6 @@ class _TicketType {
     required this.title,
     required this.subtitle,
     required this.price,
-    this.initialQty = 0,
+    this.initialQty = 0, // por defecto 0
   }) : qty = initialQty;
 }

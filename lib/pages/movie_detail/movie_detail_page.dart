@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
-import '../asientos/asientos_page.dart'; // <<-- IMPORTANTE
+
+// Si ya creaste las pantallas de filtros, deja estos imports.
+// Si aún no las tienes, puedes comentar estas 3 líneas.
+import '../Filtros/city_filter_screen.dart';
+import '../Filtros/cinema_filter_screen.dart';
+import '../Filtros/date_filter_screen.dart';
+
+import '../asientos/asientos_page.dart';
 
 class MovieDetailPage extends StatefulWidget {
   final String title;
@@ -16,7 +23,7 @@ class MovieDetailPage extends StatefulWidget {
     this.isEstreno = false,
     required this.synopsis,
     this.idiomas = const [],
-    this.formatos = const [],
+    this.formatos = const ['2D', 'REGULAR'],
   });
 
   @override
@@ -63,7 +70,7 @@ class _MovieDetailPageState extends State<MovieDetailPage>
       ),
       body: Column(
         children: [
-          // -------- Banner con ESTRENO + botón play ----------
+          // -------- Banner + etiqueta ESTRENO + botón Play ----------
           Stack(
             children: [
               AspectRatio(
@@ -89,7 +96,6 @@ class _MovieDetailPageState extends State<MovieDetailPage>
                     ),
                   ),
                 ),
-              // Play centrado
               Positioned.fill(
                 child: Center(
                   child: Container(
@@ -109,7 +115,7 @@ class _MovieDetailPageState extends State<MovieDetailPage>
             ],
           ),
 
-          // -------- Tabs Detalle / Comprar ----------
+          // ---------------- Tabs Detalle / Comprar ----------------
           Material(
             color: Colors.white,
             child: TabBar(
@@ -125,12 +131,12 @@ class _MovieDetailPageState extends State<MovieDetailPage>
             ),
           ),
 
-          // -------- Contenido de tabs ----------
+          // ---------------- Contenido de tabs ----------------
           Expanded(
             child: TabBarView(
               controller: _tab,
               children: [
-                // ================== Tab: Detalle ==================
+                // ======== Detalle ========
                 SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                   child: Column(
@@ -170,8 +176,8 @@ class _MovieDetailPageState extends State<MovieDetailPage>
                   ),
                 ),
 
-                // ================== Tab: Comprar ==================
-                _BuyTab(movieTitle: widget.title), // <<-- pasamos el título
+                // ======== Comprar ========
+                _BuyTab(movieTitle: widget.title),
               ],
             ),
           ),
@@ -192,7 +198,7 @@ class _SectionTitle extends StatelessWidget {
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF3860A6), // azul parecido al mockup
+          color: Color(0xFF3860A6),
           fontSize: 18,
           fontWeight: FontWeight.w800,
         ),
@@ -236,7 +242,10 @@ class _BuyTab extends StatefulWidget {
 }
 
 class _BuyTabState extends State<_BuyTab> {
-  // Data demo de cines + horarios (ajústala a tu backend después)
+  // Para mostrar la línea roja bajo el filtro seleccionado
+  int _selectedFilter = -1;
+
+  // Data de ejemplo de cines / horarios
   final List<_Cinema> cinemas = [
     _Cinema(
       name: 'CP ALCAZAR',
@@ -268,35 +277,84 @@ class _BuyTabState extends State<_BuyTab> {
     ),
   ];
 
+  Future<void> _openFilter(int i) async {
+    setState(() => _selectedFilter = i);
+    // Abre las páginas de filtro si las tienes
+    switch (i) {
+      case 0:
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CityFilterScreen()),
+        );
+        break;
+      case 1:
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const CinemaFilterScreen()),
+        );
+        break;
+      case 2:
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const DateFilterScreen()),
+        );
+        break;
+    }
+    // Si quieres, al volver podrías setState con el resultado
+  }
+
   @override
   Widget build(BuildContext context) {
     final divider = Container(height: 1, color: Colors.black12);
 
     return Column(
       children: [
-        // ------- Filtros superiores (Ciudad / Cine / Hoy) -------
-        _FilterRow(
-          items: const [
-            _FilterItem(icon: Icons.location_city_outlined, label: 'Ciudad'),
-            _FilterItem(icon: Icons.local_movies_outlined, label: 'Cine'),
-            _FilterItem(icon: Icons.today_outlined, label: 'Hoy'),
-          ],
-          onTap: (i) {
-            // Aquí puedes abrir tus pantallas de filtros si quieres.
-          },
+        // --------- Barra de filtros (CORREGIDA) ---------
+        Container(
+          color: Colors.white,
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  _FilterCell(
+                    index: 0,
+                    selectedIndex: _selectedFilter,
+                    icon: Icons.location_on_outlined,
+                    label: 'Ciudad',
+                    onTap: _openFilter,
+                  ),
+                  _VSep(),
+                  _FilterCell(
+                    index: 1,
+                    selectedIndex: _selectedFilter,
+                    icon: Icons.local_movies_outlined,
+                    label: 'Cine',
+                    onTap: _openFilter,
+                  ),
+                  _VSep(),
+                  _FilterCell(
+                    index: 2,
+                    selectedIndex: _selectedFilter,
+                    icon: Icons.today_outlined,
+                    label: 'Hoy',
+                    onTap: _openFilter,
+                  ),
+                ],
+              ),
+              // Borde inferior gris claro
+              divider,
+            ],
+          ),
         ),
-        divider,
 
-        // ------- Lista de cines expandibles -------
+        // --------- Lista de cines expandibles ---------
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.only(bottom: 16),
             itemCount: cinemas.length,
             separatorBuilder: (_, __) => divider,
-            itemBuilder: (_, i) => _CinemaTile(
-              cinema: cinemas[i],
-              movieTitle: widget.movieTitle, // <<-- se lo pasamos
-            ),
+            itemBuilder: (_, i) =>
+                _CinemaTile(cinema: cinemas[i], movieTitle: widget.movieTitle),
           ),
         ),
       ],
@@ -304,50 +362,61 @@ class _BuyTabState extends State<_BuyTab> {
   }
 }
 
-class _FilterRow extends StatelessWidget {
-  final List<_FilterItem> items;
-  final ValueChanged<int>? onTap;
-
-  const _FilterRow({required this.items, this.onTap});
-
+class _VSep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    Widget cell(_FilterItem it, int index) {
-      return Expanded(
-        child: InkWell(
-          onTap: () => onTap?.call(index),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(it.icon, size: 22, color: Colors.black87),
-                const SizedBox(height: 6),
-                Text(it.label, style: const TextStyle(fontSize: 12)),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Row(
-      children: List.generate(items.length * 2 - 1, (i) {
-        if (i.isOdd) {
-          return Container(width: 1, height: 44, color: Colors.black12);
-        } else {
-          final idx = i ~/ 2;
-          return cell(items[idx], idx);
-        }
-      }),
-    );
+    return Container(width: 1, height: 48, color: Colors.black12);
   }
 }
 
-class _FilterItem {
+class _FilterCell extends StatelessWidget {
+  final int index;
+  final int selectedIndex;
   final IconData icon;
   final String label;
-  const _FilterItem({required this.icon, required this.label});
+  final ValueChanged<int> onTap;
+
+  const _FilterCell({
+    required this.index,
+    required this.selectedIndex,
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isSelected = selectedIndex == index;
+
+    return Expanded(
+      child: InkWell(
+        onTap: () => onTap(index),
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 22, color: Colors.black87),
+              const SizedBox(height: 4),
+              Text(label, style: const TextStyle(fontSize: 12)),
+              const SizedBox(height: 6),
+              // Indicador rojo bajo el item seleccionado
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                height: 3,
+                width: isSelected ? 48 : 0,
+                decoration: BoxDecoration(
+                  color: Colors.red.shade700,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _CinemaTile extends StatefulWidget {
@@ -410,15 +479,13 @@ class _CinemaTileState extends State<_CinemaTile> {
           ),
         ),
 
-        if (expanded) ...[
-          // Cada bloque de formato+audio + horarios
+        if (expanded)
           for (final g in c.groups)
             _ShowGroupBlock(
               cinemaName: c.name,
               group: g,
-              movieTitle: widget.movieTitle, // <<-- título para AsientosPage
+              movieTitle: widget.movieTitle,
             ),
-        ],
       ],
     );
   }
@@ -467,7 +534,7 @@ class _ShowGroupBlock extends StatelessWidget {
               return _TimeChip(
                 time: t,
                 onPressed: () {
-                  // --------- NAVEGAR A ASIENTOS ----------
+                  // Ir a Asientos
                   final line =
                       '$cinemaName  |  ${group.label}\n$t | Hoy, Miércoles 8 de Octubre de 2025';
                   Navigator.push(
@@ -476,7 +543,7 @@ class _ShowGroupBlock extends StatelessWidget {
                       builder: (_) => AsientosPage(
                         movieTitle: movieTitle,
                         cinemaLine: line,
-                        pricePerSeat: 15.0, // ajusta tu precio
+                        pricePerSeat: 15.0,
                       ),
                     ),
                   );
@@ -514,7 +581,7 @@ class _TimeChip extends StatelessWidget {
   }
 }
 
-/// ======================= MODELOS DE COMPRA =======================
+/// ======================= MODELOS =======================
 
 class _Cinema {
   final String name;
@@ -525,8 +592,8 @@ class _Cinema {
 }
 
 class _ShowGroup {
-  final String label; // p.ej. "2D, REGULAR DOBLADA"
-  final List<String> times; // p.ej. ["15:20","21:40"]
+  final String label; // "2D, REGULAR DOBLADA"
+  final List<String> times; // ["15:20","21:40"]
 
   const _ShowGroup({required this.label, this.times = const []});
 }
